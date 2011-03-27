@@ -6,16 +6,38 @@
 
 #define RAND_MAX 10
 
-//#define PI 3.14159265 
+#define PI 3.14159265 
 #define INV_SQRT_2PI 0.39894228
 #define DEFAULT_BANDWIDTH 1.0
 
 using namespace std;
 
-// e^((x * x) / 2)
-float standardNormalDensity(float x) {
-	return exp((x * x) / -2.0) * INV_SQRT_2PI;
+// standard normal density (variance = 1, mean = 0)
+float normalDensity(float x) {
+	return INV_SQRT_2PI * exp(-pow(x, 2) / 2.0);
 }
+
+// mean = 0
+// v - variance
+/*float normalDensity(float x, float v) {
+	float a = 1.0 / sqrt(2 * PI * v);
+	return a * exp(-pow(x, 2) / (2.0 * v));
+}*/
+
+// s - standard deviation
+// v - variance (s * s)
+float normalDensity(float x, float s, float v) {
+	return (INV_SQRT_2PI / s) * exp(-pow(x, 2) / (2.0 * v));
+}
+
+/*float normalDensity(float x, float v, float m) {
+	float a = 1.0 / sqrt(2 * PI * v);
+	return a * exp(-pow(x - m, 2) / (2.0 * v));
+}*/
+
+/*float normalDensity(float x, float s, float v, float m) {
+	return (INV_SQRT_2PI / s) * exp(-pow(x - m, 2) / (2.0 * v));
+}*/
 
 int main(int argc, char **argv) {
 	fstream trainingFile(argv[1]);	
@@ -72,8 +94,10 @@ int main(int argc, char **argv) {
 	// test data using kernel density estimation
 	float test = 2.1;
 	float density = 0;
+	float v = 2.25;
+	float s = sqrt(v);
 	for(i = 0; i < N; ++i) {
-		density += standardNormalDensity((test - trainingData[i]) / bandwidth);
+		density += normalDensity((test - trainingData[i]) / bandwidth, s, v);
 	}
 	density /= N * bandwidth;
 
