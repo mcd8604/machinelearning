@@ -18,6 +18,9 @@ const int RATIO = 5; //  =  #cases/#bins
 int BINS;
 int MINCASES = 5*RATIO;
 
+const int INV_SQRT_2PI = 0.39894228;
+const int DEFAULT_BANDWIDTH = 1.0;
+
 double weights[MAXFEATURES];
 double CNweights[MAXCLASSIFIERS][MAXFEATURES];
 double CNselected[MAXCLASSIFIERS][MAXFEATURES];
@@ -31,10 +34,17 @@ typedef struct testcase
  testcase * next;
 };
 
+typedef struct valuestruct 
+{
+ double value;
+ valuestruct * next;
+};
+
 typedef struct histostruct
 {
  string type;
- double storedvalues[MAXFEATURES];
+ //double storedvalues[MAXFEATURES];
+ valuestruct * storedvalues[MAXFEATURES];
  double histogram [MAXFEATURES][MAXBINS];
  histostruct * next;
 };
@@ -86,6 +96,7 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
                   double mins[MAXFEATURES],
                   double maxes[MAXFEATURES],
                   double ranges[MAXFEATURES], bool &found);
+
 int main(int argc, char* argv[])
 {
 ifstream examplefile(argv[1]);
@@ -108,6 +119,7 @@ int exampletypecount[MAXTYPES];
 int confmatrix[MAXTYPES][MAXTYPES];
 histostruct * auxhisto;
 histostruct * histolist = 0;
+valuestruct examplevalues[MAXFEATURES];
 int testcases = 0;
 double correct = 0.0;
 double errors = 0.0;
@@ -733,7 +745,20 @@ for (i=0; i<numberoftypes; i++)
 
 }
 
+float normalKernel(float x) {
+	return (INV_SQRT_2PI / kernelStdDev) * exp(-pow(x, 2) / (2.0 * v));
+}
 
+float getDensityEstimation(float x, float n, valuestruct *data) {
+	int i;
+	float density = 0;
+	valuestruct * v = data;
+	do { density += normalKernel((x - v -> value) / bandwidth);
+	}while(data -> next)
+	//for(i = 0; i < n; ++i)
+	//	density += normalKernel((x - data[i]) / bandwidth);
+	return density / (n * bandwidth);
+}
 
 string prediction(double test_cases[windowsize][MAXFEATURES],
                   histostruct * histolist,
@@ -768,9 +793,11 @@ for (i=0; i<windowsize; i++)
  labels[i] = 0;
  aux = histolist;
  likelihoodtotal = 0.0;
+ likelihoodtotal_KDE = 0.0;
  while (aux != 0)
   {
    current_likelihood = 1.0;
+   current_likelihood_KDE = 1.0;
    for (j=0; j<numberoffields; j++)
     {
      if (!weights[j]) continue;
@@ -789,19 +816,27 @@ for (i=0; i<windowsize; i++)
         index = ((int)(proportion * BINS)) % BINS;
      //current_likelihood *= aux -> histogram[j][index];
      current_likelihood *= pow(aux -> histogram[j][index], weights[j]);
+     current_likelihood_KDE *= getDensityEstimation(test_cases[i][j], numberoffields, aux -> storevalues[j]);
     }
     likelihoodtotal += current_likelihood;
+    likelihoodtotal += current_likelihood_KDE;
     aux = aux -> next;
    }
  if (likelihoodtotal == 0.0)
   {
-   found = false;
-   return best_type;
+   if(likelihoodtotal_KDE != 0.0)
+   {
+    cout << "KDE found, histo didn't";
+   } else {
+    found = false;
+    return best_type;
+   }
   }
  aux = histolist;
  while (aux != 0)
   {
    current_likelihood = 1.0;
+   current_likelihodd_KDE = 1.0
    for (j=0; j<numberoffields; j++)
     {
      if (!weights[j]) continue;
@@ -820,8 +855,10 @@ for (i=0; i<windowsize; i++)
         index = ((int)(proportion * BINS)) % BINS;
      //current_likelihood *= aux -> histogram[j][index];
      current_likelihood *= pow(aux -> histogram[j][index], weights[j]);
+     current_likelihood_KDE *= getDensityEstimation(test_cases[i][j], numberoffields, aux -> storevalues[j]);
     }
    current_likelihood /= likelihoodtotal;
+   current_likelihood_KDE /= likelihoodtotal_KDE;
 //insert new type in descending order by probability
  typeptr = new typeinfo;
  typeptr -> name = aux -> type;
@@ -968,7 +1005,17 @@ void updatehistos(double examplebuffer[],
        else
         index = ((int)(proportion * BINS)) % BINS;
        aux -> histogram[j][index]++;
-      }
+       valuestruct *v = storedvalues[k];
+       if(!v)
+        v = new valuestruct;
+       else
+       {
+        while(v -> next) 
+		v = v.next;
+        v -> next = new valuestruct;
+	v = v -> next;
+       }
+       v -> value = examplebuffer[j];
 }
 void updatecmatrix(string predicted_label, string class_label, 
                    int numberoftypes, string typelist[MAXTYPES],
