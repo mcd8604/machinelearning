@@ -13,11 +13,11 @@ int maxpoints = 1;
 const int maxfiles = 1500;
 const int MAXFEATURES = 45;
 const int MAXTYPES = 100;
-const int MAXBINS = 1024;
+//const int MAXBINS = 1024;
 const int MAXCLASSIFIERS = 25;
-const int RATIO = 5; //  =  #cases/#bins
-int BINS;
-int MINCASES = 5 * RATIO;
+//const int RATIO = 5; //  =  #cases/#bins
+//int BINS;
+//int MINCASES = 5 * RATIO;
 
 const float INV_SQRT_2PI = 0.39894228;
 const float DEFAULT_BANDWIDTH = 1.0;
@@ -38,13 +38,13 @@ typedef struct testcase {
 typedef struct histostruct {
 	string type;
 	vector<double> storedvalues[MAXFEATURES];
-	double histogram[MAXFEATURES][MAXBINS];
+	//double histogram[MAXFEATURES][MAXBINS];
 	histostruct * next;
 };
 
-const double outliermult = 4.5;
-double globalmean[MAXFEATURES];
-double globalstddev[MAXFEATURES];
+//const double outliermult = 4.5;
+//double globalmean[MAXFEATURES];
+//double globalstddev[MAXFEATURES];
 
 typedef struct typenode {
 	string type;
@@ -66,18 +66,24 @@ void updatecmatrix(string predicted_label, string class_label,
 		int numberoftypes, string typelist[MAXTYPES],
 		int confmatrix[MAXTYPES][MAXTYPES]);
 
-void updatehistos(double examplebuffer[MAXFEATURES], string class_label,
+/*void updatehistos(double examplebuffer[MAXFEATURES], string class_label,
 		int numberoffields, double ranges[MAXFEATURES],
 		double min_values[MAXFEATURES], double max_values[MAXFEATURES],
-		histostruct * &histolist);
+		histostruct * &histolist);*/
 
-void updateglobalhistos(double examplebuffer[], int numberoffields,
+void updatehistos(double examplebuffer[MAXFEATURES], string class_label,
+		int numberoffields,	histostruct * &histolist);
+
+/*void updateglobalhistos(double examplebuffer[], int numberoffields,
 		double ranges[], double min_values[], double max_values[],
-		double globalhistos[MAXFEATURES][MAXBINS]);
+		double globalhistos[MAXFEATURES][MAXBINS]);*/
+
+/*string prediction(double test_cases[windowsize][MAXFEATURES],
+		histostruct * histolist, int numberoffields, double mins[MAXFEATURES],
+		double maxes[MAXFEATURES], double ranges[MAXFEATURES], bool &found);*/
 
 string prediction(double test_cases[windowsize][MAXFEATURES],
-		histostruct * histolist, int numberoffields, double mins[MAXFEATURES],
-		double maxes[MAXFEATURES], double ranges[MAXFEATURES], bool &found);
+		histostruct * histolist, int numberoffields, bool &found);
 
 int main(int argc, char* argv[]) {
 	ifstream examplefile(argv[1]);
@@ -109,12 +115,12 @@ int main(int argc, char* argv[]) {
 			confmatrix[i][j] = 0;
 	bool selected[MAXFEATURES];
 	double test_cases[windowsize][MAXFEATURES];
-	double min_values[MAXFEATURES];
-	double max_values[MAXFEATURES];
-	double newmin[MAXFEATURES];
-	double newmax[MAXFEATURES];
-	double ranges[MAXFEATURES];
-	double totalcumulative = 0;
+	//double min_values[MAXFEATURES];
+	//double max_values[MAXFEATURES];
+	//double newmin[MAXFEATURES];
+	//double newmax[MAXFEATURES];
+	//double ranges[MAXFEATURES];
+	//double totalcumulative = 0;
 	double examplebuffer[MAXFEATURES];
 	string class_label;
 	string predicted_label;
@@ -156,13 +162,13 @@ int main(int argc, char* argv[]) {
 			cin >> CNweights[CN][i];
 		}
 	}
-	typedef struct globalh {
+	/*typedef struct globalh {
 		double globalhistos[MAXFEATURES][MAXBINS];
-	};
+	};*/
 
-	globalh * gptr = 0;
+	//globalh * gptr = 0;
 	histostruct * aux;
-	double freqsperfield[MAXFEATURES];
+	//double freqsperfield[MAXFEATURES];
 
 	testcase * testcaselist = 0;
 	testcase * auxtestcase;
@@ -221,10 +227,10 @@ int main(int argc, char* argv[]) {
 		for (i = 0; i < numberselected; i++)
 			weights[i] = CNweights[CN][i];
 
-		gptr = new globalh;
+		//gptr = new globalh;
 		examplecases = 0;
-		for (i = 0; i < numberoffields; i++)
-			freqsperfield[i] = 0;
+		//for (i = 0; i < numberoffields; i++)
+			//freqsperfield[i] = 0;
 
 		examplefile.clear();
 		examplefile.seekg(0, ios::beg);
@@ -243,7 +249,7 @@ int main(int argc, char* argv[]) {
 					examplebuffer[++j] = field_value;
 				linestring.erase(0, fieldend + 1);
 			}
-			for (i = 0; i < numberselected; i++) {
+			/*for (i = 0; i < numberselected; i++) {
 				if (freqsperfield[i] == 0) {
 					freqsperfield[i] = 1;
 					min_values[i] = examplebuffer[i];
@@ -255,19 +261,19 @@ int main(int argc, char* argv[]) {
 						max_values[i] = examplebuffer[i];
 					freqsperfield[i]++;
 				}
-			}
+			}*/
 			getline(examplefile, linestring);
 		}
 
-		for (i = 0; i < numberselected; i++)
+		/*for (i = 0; i < numberselected; i++)
 			ranges[i] = max_values[i] - min_values[i];
 		//display max and min and ranges and mean and std dev
 		for (i = 0; i < numberselected; i++)
 			cout << endl << i << ": " << max_values[i] << " " << min_values[i]
-					<< " " << ranges[i];
+					<< " " << ranges[i];*/
 
 		//create a global histogram
-		BINS = MAXBINS;
+		/*BINS = MAXBINS;
 		bool labelfound;
 		for (j = 0; j < numberselected; j++)
 			for (i = 0; i < BINS; i++)
@@ -329,7 +335,7 @@ int main(int argc, char* argv[]) {
 			max_values[j] = newmax[j];
 			ranges[j] = max_values[j] - min_values[j];
 		}
-		delete gptr;
+		delete gptr;*/
 
 		//create histograms
 		while (histolist) {
@@ -382,8 +388,9 @@ int main(int argc, char* argv[]) {
 				exampletypelist[numberofexampletypes] = class_label;
 				exampletypecount[numberofexampletypes++] = 1;
 			}
-			updatehistos(examplebuffer, class_label, numberselected, ranges,
-					min_values, max_values, histolist);
+			//updatehistos(examplebuffer, class_label, numberselected, ranges,
+					//min_values, max_values, histolist);
+			updatehistos(examplebuffer, class_label, numberselected, histolist);
 			getline(examplefile, linestring);
 		}
 		if (maxpoints > numberofexampletypes)
@@ -394,7 +401,7 @@ int main(int argc, char* argv[]) {
 		for (k = 0; k < numberoftypes; k++)
 			cout << typelist[k] << ", " << typecount[k] << endl;
 		//convert to relative frequencies
-		int maxcount = typecount[0];
+		/*int maxcount = typecount[0];
 		for (j = 1; j < numberoftypes; j++)
 			if (typecount[j] > maxcount)
 				maxcount = typecount[j];
@@ -411,7 +418,7 @@ int main(int argc, char* argv[]) {
 					aux -> histogram[j][k] /= total;
 			}
 			aux = aux -> next;
-		}
+		}*/
 		//display histograms
 		aux = histolist;
 		//while (aux != 0)
@@ -481,8 +488,9 @@ int main(int argc, char* argv[]) {
 			class_label = fieldstring;
 			callstopredict++;
 			//cout<<"\nCorrect type = "<<class_label;
-			predicted_label = prediction(test_cases, histolist, numberselected,
-					min_values, max_values, ranges, found);
+			//predicted_label = prediction(test_cases, histolist, numberselected,
+					//min_values, max_values, ranges, found);
+			predicted_label = prediction(test_cases, histolist, numberselected, found);
 			//if (predicted_label == class_label)
 			//cout<<"Was correct\n";
 			//else
@@ -686,9 +694,11 @@ float getDensityEstimation(float x, vector<double> data) {
 	return density / (n * DEFAULT_BANDWIDTH);
 }
 
-string prediction(double test_cases[windowsize][MAXFEATURES],
+/*string prediction(double test_cases[windowsize][MAXFEATURES],
 		histostruct * histolist, int numberoffields, double mins[MAXFEATURES],
-		double maxes[MAXFEATURES], double ranges[MAXFEATURES], bool &found) {
+		double maxes[MAXFEATURES], double ranges[MAXFEATURES], bool &found) {*/
+string prediction(double test_cases[windowsize][MAXFEATURES],
+		histostruct * histolist, int numberoffields, bool &found) {
 	typedef struct typeinfo {
 		string name;
 		double probability;
@@ -701,7 +711,6 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 	double threshold = 0.02; //for no match
 	double max_likelihood;
 	double current_likelihood;
-	double current_likelihood_KDE;
 	double proportion;
 	int i, j;
 	int index;
@@ -710,17 +719,14 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 	string best_type;
 	histostruct * aux;
 	double likelihoodtotal;
-	double likelihoodtotal_KDE;
 	for (i = 0; i < windowsize; i++) {
 		labels[i] = 0;
 		aux = histolist;
 		likelihoodtotal = 0.0;
-		likelihoodtotal_KDE = 0.0;
 		while (aux != 0) {
 			current_likelihood = 1.0;
-			current_likelihood_KDE = 1.0;
 			for (j = 0; j < numberoffields; j++) {
-				if (!weights[j])
+				/*if (!weights[j])
 					continue;
 				if (test_cases[i][j] > maxes[j])
 					proportion = 1.0;
@@ -733,35 +739,27 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 				if (proportion >= (1.0 * BINS - 1.0) / BINS)
 					index = BINS - 1;
 				else
-					index = ((int) (proportion * BINS)) % BINS;
+					index = ((int) (proportion * BINS)) % BINS;*/
 				//current_likelihood *= aux -> histogram[j][index];
-				current_likelihood *= pow(aux -> histogram[j][index],
-						weights[j]);
-				//current_likelihood_KDE *= getDensityEstimation(
-						//test_cases[i][j], aux -> storedvalues[j]);
-				current_likelihood_KDE *= pow(getDensityEstimation(
+				//current_likelihood *= pow(aux -> histogram[j][index],
+						//weights[j]);;
+				current_likelihood *= pow(getDensityEstimation(
 						test_cases[i][j], aux -> storedvalues[j]), weights[j]);
 			}
 			likelihoodtotal += current_likelihood;
-			likelihoodtotal_KDE += current_likelihood_KDE;
 			aux = aux -> next;
 		}
 		if (likelihoodtotal == 0.0) {
-			if (likelihoodtotal_KDE != 0.0) {
-				cout << "KDE found, histo didn't";
-			} else {
-				found = false;
-				return best_type;
-			}
+			found = false;
+			return best_type;
 		}
 		aux = histolist;
 		while (aux != 0) {
 			current_likelihood = 1.0;
-			current_likelihood_KDE = 1.0;
 			for (j = 0; j < numberoffields; j++) {
 				if (!weights[j])
 					continue;
-				if (test_cases[i][j] > maxes[j])
+				/*if (test_cases[i][j] > maxes[j])
 					proportion = 1.0;
 				else if (test_cases[i][j] < mins[j])
 					proportion = 0.0;
@@ -772,17 +770,14 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 				if (proportion >= (1.0 * BINS - 1.0) / BINS)
 					index = BINS - 1;
 				else
-					index = ((int) (proportion * BINS)) % BINS;
+					index = ((int) (proportion * BINS)) % BINS;*/
 				//current_likelihood *= aux -> histogram[j][index];
-				current_likelihood *= pow(aux -> histogram[j][index],
-						weights[j]);
-				//current_likelihood_KDE *= getDensityEstimation(
-						//test_cases[i][j], aux -> storedvalues[j]);
-				current_likelihood_KDE *= pow(getDensityEstimation(
+				//current_likelihood *= pow(aux -> histogram[j][index],
+						//weights[j]);
+				current_likelihood *= pow(getDensityEstimation(
 						test_cases[i][j], aux -> storedvalues[j]), weights[j]);
 			}
 			current_likelihood /= likelihoodtotal;
-			current_likelihood_KDE /= likelihoodtotal_KDE;
 			//insert new type in descending order by probability
 			typeptr = new typeinfo;
 			typeptr -> name = aux -> type;
@@ -864,9 +859,11 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 	return best_type;
 }
 
-void updatehistos(double examplebuffer[], string class_label,
+/*void updatehistos(double examplebuffer[], string class_label,
 		int numberoffields, double ranges[], double min_values[],
-		double max_values[], histostruct * &histolist) {
+		double max_values[], histostruct * &histolist) {*/
+void updatehistos(double examplebuffer[], string class_label,
+		int numberoffields, histostruct * &histolist) {
 	//cout<<"\nIncoming class_label: "<<class_label;
 	//cout<<"\nfield values: \n";
 	//for (int z=0; z<numberoffields; z++)
@@ -889,14 +886,14 @@ void updatehistos(double examplebuffer[], string class_label,
 		aux -> type = class_label;
 		aux -> next = histolist;
 		histolist = aux;
-		for (j = 0; j < numberoffields; j++)
-			for (k = 0; k < BINS; k++)
+		//for (j = 0; j < numberoffields; j++)
+			//for (k = 0; k < BINS; k++)
 				//aux -> histogram[j][k] = 0.125;
 				//aux -> histogram[j][k] = 0.03125;
-				aux -> histogram[j][k] = 0;
+				//ux -> histogram[j][k] = 0;
 	}
 	for (j = 0; j < numberoffields; j++) {
-		if (ranges[j] == 0.0)
+		/*if (ranges[j] == 0.0)
 			proportion = 1.0;
 		else
 			proportion = (examplebuffer[j] - min_values[j]) / ranges[j];
@@ -906,7 +903,7 @@ void updatehistos(double examplebuffer[], string class_label,
 			index = 0;
 		else
 			index = ((int) (proportion * BINS)) % BINS;
-		aux -> histogram[j][index]++;
+		aux -> histogram[j][index]++;*/
 		aux -> storedvalues[j].push_back(examplebuffer[j]);
 	}
 }
@@ -924,7 +921,7 @@ void updatecmatrix(string predicted_label, string class_label,
 	confmatrix[row][col]++;
 }
 
-void updateglobalhistos(double examplebuffer[], int numberoffields,
+/*void updateglobalhistos(double examplebuffer[], int numberoffields,
 		double ranges[], double min_values[], double max_values[],
 		double globalhistos[MAXFEATURES][MAXBINS]) {
 	int i, j, k;
@@ -941,5 +938,5 @@ void updateglobalhistos(double examplebuffer[], int numberoffields,
 			index = ((int) (proportion * BINS)) % BINS;
 		globalhistos[j][index]++;
 	}
-}
+}*/
 
