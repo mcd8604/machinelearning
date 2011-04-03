@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <vector>
 using namespace std;
 
 double lowest_ever = 1.0;
@@ -18,9 +19,9 @@ const int RATIO = 5; //  =  #cases/#bins
 int BINS;
 int MINCASES = 5 * RATIO;
 
-const int INV_SQRT_2PI = 0.39894228;
-const int DEFAULT_BANDWIDTH = 1.0;
-const int KERNEL_STD_DEV = 2.25;
+const float INV_SQRT_2PI = 0.39894228;
+const float DEFAULT_BANDWIDTH = 1.0;
+const float KERNEL_STD_DEV = 2.25;
 
 double weights[MAXFEATURES];
 double CNweights[MAXCLASSIFIERS][MAXFEATURES];
@@ -34,15 +35,9 @@ typedef struct testcase {
 	testcase * next;
 };
 
-typedef struct valuestruct {
-	double value;
-	valuestruct * next;
-};
-
 typedef struct histostruct {
 	string type;
-	//double storedvalues[MAXFEATURES];
-	valuestruct * storedvalues[MAXFEATURES];
+	vector<double> storedvalues[MAXFEATURES];
 	double histogram[MAXFEATURES][MAXBINS];
 	histostruct * next;
 };
@@ -105,7 +100,6 @@ int main(int argc, char* argv[]) {
 	int confmatrix[MAXTYPES][MAXTYPES];
 	histostruct * auxhisto;
 	histostruct * histolist = 0;
-	valuestruct examplevalues[MAXFEATURES];
 	int testcases = 0;
 	double correct = 0.0;
 	double errors = 0.0;
@@ -680,19 +674,15 @@ int main(int argc, char* argv[]) {
 }
 
 float normalKernel(float x) {
-	return (INV_SQRT_2PI / KERNEL_STD_DEV) * exp(-pow(x, 2) / (2.0 * pow(
-			KERNEL_STD_DEV, 2)));
+	return (INV_SQRT_2PI / KERNEL_STD_DEV) * exp(-pow(x, 2) / (2.0 * pow(KERNEL_STD_DEV, 2)));
 }
 
-float getDensityEstimation(float x, float n, valuestruct *data) {
+float getDensityEstimation(float x, vector<double> data) {
 	int i;
 	float density = 0;
-	valuestruct * v = data;
-	do {
-		density += normalKernel((x - v -> value) / DEFAULT_BANDWIDTH);
-	} while (data -> next);
-	//for(i = 0; i < n; ++i)
-	//	density += normalKernel((x - data[i]) / DEFAULT_BANDWIDTH);
+	int n = data.size();
+	for(i = 0; i < n; ++i)
+			density += normalKernel((x - data[i]) / DEFAULT_BANDWIDTH);
 	return density / (n * DEFAULT_BANDWIDTH);
 }
 
@@ -747,9 +737,10 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 				//current_likelihood *= aux -> histogram[j][index];
 				current_likelihood *= pow(aux -> histogram[j][index],
 						weights[j]);
-				current_likelihood_KDE *= getDensityEstimation(
-						test_cases[i][j], numberoffields,
-						aux -> storedvalues[j]);
+				//current_likelihood_KDE *= getDensityEstimation(
+						//test_cases[i][j], aux -> storedvalues[j]);
+				current_likelihood_KDE *= pow(getDensityEstimation(
+						test_cases[i][j], aux -> storedvalues[j]), weights[j]);
 			}
 			likelihoodtotal += current_likelihood;
 			likelihoodtotal_KDE += current_likelihood_KDE;
@@ -785,9 +776,10 @@ string prediction(double test_cases[windowsize][MAXFEATURES],
 				//current_likelihood *= aux -> histogram[j][index];
 				current_likelihood *= pow(aux -> histogram[j][index],
 						weights[j]);
-				current_likelihood_KDE *= getDensityEstimation(
-						test_cases[i][j], numberoffields,
-						aux -> storedvalues[j]);
+				//current_likelihood_KDE *= getDensityEstimation(
+						//test_cases[i][j], aux -> storedvalues[j]);
+				current_likelihood_KDE *= pow(getDensityEstimation(
+						test_cases[i][j], aux -> storedvalues[j]), weights[j]);
 			}
 			current_likelihood /= likelihoodtotal;
 			current_likelihood_KDE /= likelihoodtotal_KDE;
@@ -903,7 +895,6 @@ void updatehistos(double examplebuffer[], string class_label,
 				//aux -> histogram[j][k] = 0.03125;
 				aux -> histogram[j][k] = 0;
 	}
-	//else
 	for (j = 0; j < numberoffields; j++) {
 		if (ranges[j] == 0.0)
 			proportion = 1.0;
@@ -916,16 +907,7 @@ void updatehistos(double examplebuffer[], string class_label,
 		else
 			index = ((int) (proportion * BINS)) % BINS;
 		aux -> histogram[j][index]++;
-		valuestruct *v = aux -> storedvalues[k];
-		if (!v)
-			v = new valuestruct;
-		else {
-			while (v -> next)
-				v = v -> next;
-			v -> next = new valuestruct;
-			v = v -> next;
-		}
-		v -> value = examplebuffer[j];
+		aux -> storedvalues[j].push_back(examplebuffer[j]);
 	}
 }
 
